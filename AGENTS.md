@@ -39,10 +39,10 @@ tflint --init
 terraform -chdir=envs/prod init -backend=false
 terraform -chdir=envs/prod validate
 npm run lint                                    # terraform fmt -check + tflint
-npm test                                        # terraform test per module (mocked provider)
+npm test                                        # terraform test for bootstrap and modules (mocked provider)
 ```
 
-CI (`.github/workflows/ci.yml`) runs `terraform fmt -check`, `tflint`, `validate` of `bootstrap` and `envs/prod` (with `-lockfile=readonly`) and the module tests on every pull request and push to `develop` and `main`. Actions are pinned by commit SHA. When a provider version changes, commit the updated `.terraform.lock.hcl` of every root and module.
+CI (`.github/workflows/ci.yml`) runs `terraform fmt -check`, `tflint`, `validate` of `bootstrap` and `envs/prod` (with `-lockfile=readonly`) and the bootstrap and module tests on every pull request and push to `develop` and `main`. Actions are pinned by commit SHA. When a provider version changes, commit the updated `.terraform.lock.hcl` of every root and module.
 
 ## Git workflow
 
