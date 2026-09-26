@@ -19,7 +19,7 @@ Terraform code for the AWS serverless infrastructure of a tech accessories store
 - Tags through the provider `default_tags`: `Project`, `Environment`, `ManagedBy = terraform`, `Repository`.
 - Every module declares `required_version` and `required_providers` (enforced by tflint).
 - Variables and outputs always have `description` and `type`; sensitive values use `sensitive = true`.
-- Files per module: `main.tf`, `variables.tf`, `outputs.tf`, `versions.tf`.
+- Files per module: `main.tf`, `variables.tf`, `outputs.tf`, `versions.tf` and `tests/<module>.tftest.hcl` (plan assertions with `mock_provider "aws"`).
 - Explain resources in the pull request, not in comments; comments only for non-obvious constraints.
 
 ## Security and cost rules (mandatory)
@@ -39,6 +39,7 @@ tflint --init
 terraform -chdir=envs/prod init -backend=false
 terraform -chdir=envs/prod validate
 npm run lint                                    # terraform fmt -check + tflint
+npm test                                        # terraform test per module (mocked provider)
 ```
 
 ## Git workflow

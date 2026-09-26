@@ -1,3 +1,3 @@
 export default {
-  '*.tf': ['terraform fmt', () => 'tflint --recursive'],
+  '*.{tf,tftest.hcl}': ['terraform fmt', () => 'tflint --recursive'],
 };

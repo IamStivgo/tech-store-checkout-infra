@@ -11,7 +11,8 @@
   "scripts": {
     "prepare": "husky",
     "lint": "terraform fmt -check -recursive && tflint --recursive",
-    "format": "terraform fmt -recursive"
+    "format": "terraform fmt -recursive",
+    "test": "bash scripts/test-modules.sh"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

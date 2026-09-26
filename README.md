@@ -47,6 +47,7 @@ terraform -chdir=envs/prod validate
 |---|---|
 | `npm run lint` | `terraform fmt -check` y `tflint` en todo el repositorio |
 | `npm run format` | Aplica `terraform fmt` en todo el repositorio |
+| `npm test` | `terraform test` de cada módulo con pruebas (proveedor simulado, sin credenciales de AWS) |
 
 ## Flujo de trabajo
 
