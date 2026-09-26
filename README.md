@@ -43,6 +43,13 @@ terraform -chdir=envs/prod init -backend=false    # Proveedores, sin conectar el
 terraform -chdir=envs/prod validate
 ```
 
+Para trabajar contra el estado real (con un perfil de AWS con permisos sobre `checkout-app-*`):
+
+```bash
+terraform -chdir=envs/prod init -backend-config="bucket=checkout-app-tfstate-<account_id>"
+terraform -chdir=envs/prod plan
+```
+
 | Script | Descripción |
 |---|---|
 | `npm run lint` | `terraform fmt -check` y `tflint` en todo el repositorio |
