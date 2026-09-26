@@ -54,3 +54,4 @@ terraform -chdir=envs/prod validate
 - Ramas: `main` (estable), `develop` (integración) y `feature/HU-xxx-descripcion`.
 - Commits en inglés con [Conventional Commits](https://www.conventionalcommits.org/) más el tipo `infra`, validados por commitlint.
 - Antes de cada commit, lint-staged ejecuta `terraform fmt` y `tflint` sobre los archivos `.tf` modificados.
+- Integración continua con GitHub Actions en cada PR y push a `develop` y `main`: `terraform fmt -check`, `tflint`, `terraform validate` de `bootstrap` y `envs/prod` y las pruebas de los módulos. Dependabot propone actualizaciones semanales del proveedor de AWS y de las acciones.

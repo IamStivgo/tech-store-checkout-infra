@@ -42,6 +42,8 @@ npm run lint                                    # terraform fmt -check + tflint
 npm test                                        # terraform test per module (mocked provider)
 ```
 
+CI (`.github/workflows/ci.yml`) runs `terraform fmt -check`, `tflint`, `validate` of `bootstrap` and `envs/prod` (with `-lockfile=readonly`) and the module tests on every pull request and push to `develop` and `main`. Actions are pinned by commit SHA. When a provider version changes, commit the updated `.terraform.lock.hcl` of every root and module.
+
 ## Git workflow
 
 - Branches: `main` (stable), `develop` (integration), `feature/HU-xxx-description`.
