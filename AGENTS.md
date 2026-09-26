@@ -8,7 +8,8 @@ Terraform code for the AWS serverless infrastructure of a tech accessories store
 
 ## Structure
 
-- `bootstrap/`: applied once, manually, with administrator credentials. Creates the Terraform state bucket, the GitHub OIDC provider and the `terraform` role.
+- `bootstrap/`: applied once, manually, with a profile scoped to `checkout-app-*` (procedure in the README). Creates the Terraform state bucket, the GitHub OIDC provider and the `checkout-app-terraform-plan` (pull requests, read-only) and `checkout-app-terraform-apply` (`production` environment) roles. Its state lives in the same bucket under `bootstrap/terraform.tfstate`.
+- Backends are partial: never write the state bucket name (it contains the account ID); pass it with `-backend-config="bucket=..."`.
 - `modules/<name>/`: reusable modules (`static-site`, `api`, `database`, `secrets`, `scheduler`, `ci-roles`).
 - `envs/prod/`: the only environment; composes the modules.
 - `placeholder/`: minimal handler used to create the Lambda functions. The api repository deploys the real code.
@@ -25,7 +26,7 @@ Terraform code for the AWS serverless infrastructure of a tech accessories store
 ## Security and cost rules (mandatory)
 
 - Never write the name of the company that proposed this exercise anywhere in the repository: code, comments, variables, tags, commit messages, branch names or docs. Refer to it as "payment provider".
-- Never commit state files, real `.tfvars`, secrets or real provider URLs. Secret values never go through the normal `value` argument (it stores them in the state): use write-only arguments or create them outside Terraform.
+- Never commit state files, real `.tfvars`, secrets or real provider URLs. Payment provider secrets are created outside Terraform with the AWS CLI; Terraform only builds their names and ARNs (the plan role is denied reading them).
 - Least privilege IAM, scoped by resource ARN or name prefix. CI uses OIDC roles; no static AWS keys.
 - Lambda functions are created from the placeholder with `ignore_changes` on the code; Terraform owns memory, timeout, environment and permissions.
 - Do not add cost traps: no VPC, NAT Gateway, ALB, RDS, WAF, Secrets Manager or provisioned concurrency.
@@ -39,10 +40,10 @@ tflint --init
 terraform -chdir=envs/prod init -backend=false
 terraform -chdir=envs/prod validate
 npm run lint                                    # terraform fmt -check + tflint
-npm test                                        # terraform test per module (mocked provider)
+npm test                                        # terraform test for bootstrap and modules (mocked provider)
 ```
 
-CI (`.github/workflows/ci.yml`) runs `terraform fmt -check`, `tflint`, `validate` of `bootstrap` and `envs/prod` (with `-lockfile=readonly`) and the module tests on every pull request and push to `develop` and `main`. Actions are pinned by commit SHA. When a provider version changes, commit the updated `.terraform.lock.hcl` of every root and module.
+CI (`.github/workflows/ci.yml`) runs `terraform fmt -check`, `tflint`, `validate` of `bootstrap` and `envs/prod` (with `-lockfile=readonly`) and the bootstrap and module tests on every pull request and push to `develop` and `main`. Actions are pinned by commit SHA. When a provider version changes, commit the updated `.terraform.lock.hcl` of every root and module.
 
 ## Git workflow
 

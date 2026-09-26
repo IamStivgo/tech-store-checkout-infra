@@ -47,11 +47,39 @@ terraform -chdir=envs/prod validate
 |---|---|
 | `npm run lint` | `terraform fmt -check` y `tflint` en todo el repositorio |
 | `npm run format` | Aplica `terraform fmt` en todo el repositorio |
-| `npm test` | `terraform test` de cada módulo con pruebas (proveedor simulado, sin credenciales de AWS) |
+| `npm test` | `terraform test` del bootstrap y de cada módulo con pruebas (proveedor simulado, sin credenciales de AWS) |
+
+## Bootstrap (una sola vez)
+
+`bootstrap/` crea lo que Terraform y GitHub Actions necesitan antes que todo lo demás:
+
+- Bucket `checkout-app-tfstate-<account_id>` para el estado: versionado, cifrado, privado y solo accesible con TLS 1.2 o superior.
+- Proveedor OIDC de GitHub Actions.
+- Rol `checkout-app-terraform-plan`: solo lectura, para los PR de este repositorio. No puede leer los secretos de la pasarela.
+- Rol `checkout-app-terraform-apply`: solo para el environment `production`. No puede modificar los recursos del bootstrap.
+
+El backend es **parcial**: el nombre del bucket no se versiona y se pasa con `-backend-config`. El primer `apply` se hace con estado local, que luego se migra al bucket:
+
+```bash
+export AWS_PROFILE=<perfil con permisos sobre checkout-app-*>
+mv bootstrap/backend.tf bootstrap/backend.tf.off     # 1. Primer apply con estado local
+terraform -chdir=bootstrap init
+terraform -chdir=bootstrap apply
+STATE_BUCKET=$(terraform -chdir=bootstrap output -raw state_bucket_name)
+mv bootstrap/backend.tf.off bootstrap/backend.tf     # 2. Migra el estado al bucket creado
+terraform -chdir=bootstrap init -migrate-state -backend-config="bucket=$STATE_BUCKET"
+rm bootstrap/terraform.tfstate bootstrap/terraform.tfstate.backup
+```
+
+Después, en cualquier máquina:
+
+```bash
+terraform -chdir=bootstrap init -backend-config="bucket=checkout-app-tfstate-<account_id>"
+```
 
 ## Flujo de trabajo
 
 - Ramas: `main` (estable), `develop` (integración) y `feature/HU-xxx-descripcion`.
 - Commits en inglés con [Conventional Commits](https://www.conventionalcommits.org/) más el tipo `infra`, validados por commitlint.
 - Antes de cada commit, lint-staged ejecuta `terraform fmt` y `tflint` sobre los archivos `.tf` modificados.
-- Integración continua con GitHub Actions en cada PR y push a `develop` y `main`: `terraform fmt -check`, `tflint`, `terraform validate` de `bootstrap` y `envs/prod` y las pruebas de los módulos. Dependabot propone actualizaciones semanales del proveedor de AWS y de las acciones.
+- Integración continua con GitHub Actions en cada PR y push a `develop` y `main`: `terraform fmt -check`, `tflint`, `terraform validate` de `bootstrap` y `envs/prod` y las pruebas del bootstrap y de los módulos. Dependabot propone actualizaciones semanales del proveedor de AWS y de las acciones.
