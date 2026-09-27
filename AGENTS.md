@@ -12,7 +12,7 @@ Terraform code for the AWS serverless infrastructure of a tech accessories store
 - Backends are partial: never write the state bucket name (it contains the account ID); pass it with `-backend-config="bucket=..."`.
 - `modules/<name>/`: reusable modules (`static-site`, `api`, `database`, `secrets`, `scheduler`, `ci-roles`).
 - `envs/prod/`: the only environment; composes the modules.
-- `placeholder/`: minimal handler used to create the Lambda functions. The api repository deploys the real code.
+- `placeholder/`: `lambda.js` and `reconcile.js`, zipped during plan (`hashicorp/archive`) only to create the Lambda functions. The api repository deploys the real bundle, which must keep the same contract: `lambda.handler` and `reconcile.handler` at the zip root. API Gateway and the scheduler invoke the `live` alias; the api deployment publishes a version and moves the alias.
 
 ## Conventions
 

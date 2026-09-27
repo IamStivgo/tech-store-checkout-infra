@@ -16,3 +16,15 @@ module "secrets" {
 
   parameter_prefix = "/${local.project}/${local.environment}"
 }
+
+module "api" {
+  source = "../../modules/api"
+
+  name_prefix             = local.name_prefix
+  app_env                 = local.environment
+  placeholder_source_dir  = "${path.root}/../../placeholder"
+  table_names             = module.database.table_names
+  table_arns              = module.database.table_arns
+  payment_parameter_names = module.secrets.parameter_names
+  payment_parameter_arns  = module.secrets.parameter_arns
+}
