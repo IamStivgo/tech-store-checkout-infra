@@ -4,6 +4,8 @@ node_modules/
 # Terraform working directories and state
 .terraform/
 .terraform-test/
+# Placeholder zip built by the api module during plan
+.build/
 *.tfstate
 *.tfstate.*
 *.tfplan
