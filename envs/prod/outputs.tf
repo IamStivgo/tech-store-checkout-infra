@@ -32,3 +32,8 @@ output "payment_parameter_names" {
   description = "SSM parameters to create with the AWS CLI for the payment provider secrets."
   value       = module.secrets.parameter_names
 }
+
+output "ci_role_arns" {
+  description = "Deploy role ARNs (deploy-web, deploy-api, seed) for the GitHub variables of the web and api repositories."
+  value       = module.ci_roles.role_arns
+}

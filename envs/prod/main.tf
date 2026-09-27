@@ -1,8 +1,9 @@
 locals {
-  project     = "checkout-app"
-  environment = "prod"
-  aws_region  = "us-east-1"
-  name_prefix = "${local.project}-${local.environment}"
+  project      = "checkout-app"
+  environment  = "prod"
+  aws_region   = "us-east-1"
+  name_prefix  = "${local.project}-${local.environment}"
+  github_owner = "IamStivgo"
 }
 
 module "database" {
@@ -41,4 +42,22 @@ module "scheduler" {
 
   name_prefix         = local.name_prefix
   target_function_arn = module.api.live_alias_arns["reconcile"]
+}
+
+module "ci_roles" {
+  source = "../../modules/ci-roles"
+
+  name_prefix         = local.name_prefix
+  parameter_prefix    = "/${local.project}/${local.environment}"
+  web_repository      = "${local.github_owner}/tech-store-checkout-web"
+  api_repository      = "${local.github_owner}/tech-store-checkout-api"
+  spa_bucket_name     = module.static_site.bucket_name
+  spa_bucket_arn      = module.static_site.bucket_arn
+  distribution_id     = module.static_site.distribution_id
+  distribution_arn    = module.static_site.distribution_arn
+  app_url             = "https://${module.static_site.cloudfront_domain}"
+  function_names      = module.api.function_names
+  function_arns       = module.api.function_arns
+  products_table_name = module.database.table_names["products"]
+  products_table_arn  = module.database.table_arns["products"]
 }
