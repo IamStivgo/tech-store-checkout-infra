@@ -29,6 +29,13 @@ module "api" {
   payment_parameter_arns  = module.secrets.parameter_arns
 }
 
+module "static_site" {
+  source = "../../modules/static-site"
+
+  name_prefix = local.name_prefix
+  api_domain  = module.api.http_api_domain
+}
+
 module "scheduler" {
   source = "../../modules/scheduler"
 
