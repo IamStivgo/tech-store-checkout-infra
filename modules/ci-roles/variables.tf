@@ -19,22 +19,22 @@ variable "parameter_prefix" {
 }
 
 variable "web_repository" {
-  description = "GitHub repository of the web app, as <owner>/<name>."
+  description = "GitHub repository of the web app, as <owner>@<owner_id>/<name>@<repository_id> (the immutable OIDC subject format)."
   type        = string
 
   validation {
-    condition     = can(regex("^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$", var.web_repository))
-    error_message = "web_repository must be <owner>/<name>."
+    condition     = can(regex("^[A-Za-z0-9-]+@[0-9]+/[A-Za-z0-9._-]+@[0-9]+$", var.web_repository))
+    error_message = "web_repository must be <owner>@<owner_id>/<name>@<repository_id>."
   }
 }
 
 variable "api_repository" {
-  description = "GitHub repository of the API, as <owner>/<name>."
+  description = "GitHub repository of the API, as <owner>@<owner_id>/<name>@<repository_id> (the immutable OIDC subject format)."
   type        = string
 
   validation {
-    condition     = can(regex("^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$", var.api_repository))
-    error_message = "api_repository must be <owner>/<name>."
+    condition     = can(regex("^[A-Za-z0-9-]+@[0-9]+/[A-Za-z0-9._-]+@[0-9]+$", var.api_repository))
+    error_message = "api_repository must be <owner>@<owner_id>/<name>@<repository_id>."
   }
 }
 

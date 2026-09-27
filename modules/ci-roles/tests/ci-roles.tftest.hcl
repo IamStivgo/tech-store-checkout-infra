@@ -9,8 +9,8 @@ mock_provider "aws" {
 variables {
   name_prefix         = "checkout-app-test"
   parameter_prefix    = "/checkout-app/test"
-  web_repository      = "octo-org/web-repo"
-  api_repository      = "octo-org/api-repo"
+  web_repository      = "octo-org@100/web-repo@300"
+  api_repository      = "octo-org@100/api-repo@400"
   spa_bucket_name     = "checkout-app-test-spa-123456789012"
   spa_bucket_arn      = "arn:aws:s3:::checkout-app-test-spa-123456789012"
   distribution_id     = "E2TESTDISTRIBUTION"
@@ -69,7 +69,7 @@ run "each_role_trusts_the_production_environment_of_its_repository" {
   assert {
     condition = (
       jsondecode(aws_iam_role.this["deploy-web"].assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"]
-      == "repo:octo-org/web-repo:environment:production"
+      == "repo:octo-org@100/web-repo@300:environment:production"
     )
     error_message = "deploy-web must only trust the production environment of the web repository."
   }
@@ -78,7 +78,7 @@ run "each_role_trusts_the_production_environment_of_its_repository" {
     condition = alltrue([
       for role in ["deploy-api", "seed"] :
       jsondecode(aws_iam_role.this[role].assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"]
-      == "repo:octo-org/api-repo:environment:production"
+      == "repo:octo-org@100/api-repo@400:environment:production"
     ])
     error_message = "deploy-api and seed must only trust the production environment of the api repository."
   }
@@ -163,4 +163,14 @@ run "rejects_invalid_app_urls" {
   }
 
   expect_failures = [var.app_url]
+}
+
+run "rejects_repositories_without_immutable_ids" {
+  command = plan
+
+  variables {
+    web_repository = "octo-org/web-repo"
+  }
+
+  expect_failures = [var.web_repository]
 }
