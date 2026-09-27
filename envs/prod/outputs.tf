@@ -1,3 +1,18 @@
+output "app_url" {
+  description = "Public URL of the application (SPA and /api/*)."
+  value       = "https://${module.static_site.cloudfront_domain}"
+}
+
+output "spa_bucket_name" {
+  description = "S3 bucket of the SPA build."
+  value       = module.static_site.bucket_name
+}
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID, for cache invalidations."
+  value       = module.static_site.distribution_id
+}
+
 output "dynamodb_table_names" {
   description = "DynamoDB table names by logical name."
   value       = module.database.table_names
