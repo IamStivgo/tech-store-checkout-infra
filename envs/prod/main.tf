@@ -28,3 +28,10 @@ module "api" {
   payment_parameter_names = module.secrets.parameter_names
   payment_parameter_arns  = module.secrets.parameter_arns
 }
+
+module "scheduler" {
+  source = "../../modules/scheduler"
+
+  name_prefix         = local.name_prefix
+  target_function_arn = module.api.live_alias_arns["reconcile"]
+}
