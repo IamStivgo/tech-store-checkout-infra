@@ -1,0 +1,24 @@
+# Git hooks tooling
+node_modules/
+
+# Terraform working directories and state
+.terraform/
+.terraform-test/
+# Placeholder zip built by the api module during plan
+.build/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
+# Variables with real values
+*.tfvars
+!*.tfvars.example
+
+# Secrets
+.env
+.forbidden-words
+
+# Editor
+.vscode/

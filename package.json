@@ -1,0 +1,23 @@
+{
+  "name": "tech-store-checkout-infra",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Git hooks tooling for the Terraform infrastructure of the tech store checkout.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "lint": "terraform fmt -check -recursive && tflint --recursive",
+    "format": "terraform fmt -recursive",
+    "test": "bash scripts/test-modules.sh"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1"
+  }
+}
