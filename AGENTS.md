@@ -45,6 +45,8 @@ npm test                                        # terraform test for bootstrap a
 
 CI (`.github/workflows/ci.yml`) runs `terraform fmt -check`, `tflint`, `validate` of `bootstrap` and `envs/prod` (with `-lockfile=readonly`) and the bootstrap and module tests on every pull request and push to `develop` and `main`. Actions are pinned by commit SHA. When a provider version changes, commit the updated `.terraform.lock.hcl` of every root and module.
 
+On pull requests, the `Terraform plan` job assumes the read-only `checkout-app-terraform-plan` role (OIDC subject `pull_request`) and comments the plan of `envs/prod`. `apply.yml` runs on pushes to `main` in the `production` environment with `checkout-app-terraform-apply`. The repository is public: never print the AWS account ID in logs, comments or summaries (mask it or replace it with `<account-id>`). Any value that contains it (role ARNs, state bucket) is a GitHub secret, not a variable: action inputs are logged before `mask-aws-account-id` takes effect.
+
 ## Git workflow
 
 - Branches: `main` (stable), `develop` (integration), `feature/HU-xxx-description`.

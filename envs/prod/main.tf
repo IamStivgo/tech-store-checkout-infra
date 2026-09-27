@@ -1,9 +1,10 @@
 locals {
-  project      = "checkout-app"
-  environment  = "prod"
-  aws_region   = "us-east-1"
-  name_prefix  = "${local.project}-${local.environment}"
-  github_owner = "IamStivgo"
+  project     = "checkout-app"
+  environment = "prod"
+  aws_region  = "us-east-1"
+  name_prefix = "${local.project}-${local.environment}"
+  # GitHub OIDC subjects use immutable IDs: <owner>@<owner_id>/<name>@<repository_id>.
+  github_owner = "IamStivgo@94694810"
 }
 
 module "database" {
@@ -49,8 +50,8 @@ module "ci_roles" {
 
   name_prefix         = local.name_prefix
   parameter_prefix    = "/${local.project}/${local.environment}"
-  web_repository      = "${local.github_owner}/tech-store-checkout-web"
-  api_repository      = "${local.github_owner}/tech-store-checkout-api"
+  web_repository      = "${local.github_owner}/tech-store-checkout-web@1388345025"
+  api_repository      = "${local.github_owner}/tech-store-checkout-api@1388345462"
   spa_bucket_name     = module.static_site.bucket_name
   spa_bucket_arn      = module.static_site.bucket_arn
   distribution_id     = module.static_site.distribution_id

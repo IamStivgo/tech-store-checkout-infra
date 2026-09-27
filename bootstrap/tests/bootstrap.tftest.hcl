@@ -19,7 +19,7 @@ mock_provider "aws" {
 }
 
 variables {
-  github_repository = "octo-org/infra-repo"
+  github_repository = "octo-org@100/infra-repo@200"
 }
 
 run "state_bucket_is_unique_versioned_encrypted_and_private" {
@@ -118,7 +118,7 @@ run "each_role_trusts_a_single_subject_of_the_repository" {
   assert {
     condition = (
       jsondecode(aws_iam_role.terraform["plan"].assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"]
-      == "repo:octo-org/infra-repo:pull_request"
+      == "repo:octo-org@100/infra-repo@200:pull_request"
     )
     error_message = "The plan role must only trust pull requests of the repository."
   }
@@ -126,7 +126,7 @@ run "each_role_trusts_a_single_subject_of_the_repository" {
   assert {
     condition = (
       jsondecode(aws_iam_role.terraform["apply"].assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"]
-      == "repo:octo-org/infra-repo:environment:production"
+      == "repo:octo-org@100/infra-repo@200:environment:production"
     )
     error_message = "The apply role must only trust the production environment of the repository."
   }
@@ -207,6 +207,16 @@ run "rejects_invalid_repositories" {
 
   variables {
     github_repository = "not a repository"
+  }
+
+  expect_failures = [var.github_repository]
+}
+
+run "rejects_repositories_without_immutable_ids" {
+  command = plan
+
+  variables {
+    github_repository = "octo-org/infra-repo"
   }
 
   expect_failures = [var.github_repository]
