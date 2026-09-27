@@ -105,3 +105,12 @@ unset value
 - Commits en inglés con [Conventional Commits](https://www.conventionalcommits.org/) más el tipo `infra`, validados por commitlint.
 - Antes de cada commit, lint-staged ejecuta `terraform fmt` y `tflint` sobre los archivos `.tf` modificados.
 - Integración continua con GitHub Actions en cada PR y push a `develop` y `main`: `terraform fmt -check`, `tflint`, `terraform validate` de `bootstrap` y `envs/prod` y las pruebas del bootstrap y de los módulos. Dependabot propone actualizaciones semanales del proveedor de AWS y de las acciones.
+
+## Despliegue (GitHub Actions con OIDC, sin llaves de AWS)
+
+| Workflow | Cuándo | Rol | Qué hace |
+|---|---|---|---|
+| `ci.yml`, job `Terraform plan` | Cada PR del propio repositorio (no forks ni Dependabot) | `checkout-app-terraform-plan` (solo lectura) | `terraform plan` de `envs/prod` contra el estado real y comentario en el PR con el resumen y el plan completo |
+| `apply.yml` | Merge a `main` (o manual) | `checkout-app-terraform-apply` | Tras la aprobación del environment `production`: `plan` + `apply` de `envs/prod`, verificación de los parámetros `/checkout-app/prod/deploy/*` y resumen con los outputs |
+
+El repositorio es público: el ID de la cuenta se enmascara en los logs y se reemplaza por `<account-id>` en los comentarios y resúmenes. Variables del repositorio: `AWS_REGION`, `TF_STATE_BUCKET`, `AWS_TERRAFORM_PLAN_ROLE_ARN` y `AWS_TERRAFORM_APPLY_ROLE_ARN` (salidas del bootstrap).
