@@ -43,6 +43,13 @@ terraform -chdir=envs/prod init -backend=false    # Proveedores, sin conectar el
 terraform -chdir=envs/prod validate
 ```
 
+Para trabajar contra el estado real (con un perfil de AWS con permisos sobre `checkout-app-*`):
+
+```bash
+terraform -chdir=envs/prod init -backend-config="bucket=checkout-app-tfstate-<account_id>"
+terraform -chdir=envs/prod plan
+```
+
 | Script | Descripción |
 |---|---|
 | `npm run lint` | `terraform fmt -check` y `tflint` en todo el repositorio |
@@ -75,6 +82,21 @@ Después, en cualquier máquina:
 
 ```bash
 terraform -chdir=bootstrap init -backend-config="bucket=checkout-app-tfstate-<account_id>"
+```
+
+## Secretos de la pasarela de pagos
+
+La llave privada, el secreto de integridad y el secreto de eventos del sandbox se guardan como parámetros `SecureString` en SSM y **no los gestiona Terraform**. Si los gestionara, al refrescar leería el valor descifrado: el secreto quedaría en el estado y el rol de `plan` de los PR, que tiene denegada su lectura, fallaría. El módulo `secrets` solo expone sus nombres (`terraform output payment_parameter_names`) y sus ARN para las políticas de las Lambdas.
+
+Se crean o rotan una vez con la CLI, sin que el valor quede en el historial de la terminal:
+
+```bash
+for secret in private-key integrity-secret events-secret; do
+  read -rsp "Valor de ${secret}: " value && echo
+  aws ssm put-parameter --name "/checkout-app/prod/payment/${secret}" \
+    --type SecureString --value "$value" --overwrite >/dev/null
+done
+unset value
 ```
 
 ## Flujo de trabajo

@@ -3,6 +3,7 @@ node_modules/
 
 # Terraform working directories and state
 .terraform/
+.terraform-test/
 *.tfstate
 *.tfstate.*
 *.tfplan

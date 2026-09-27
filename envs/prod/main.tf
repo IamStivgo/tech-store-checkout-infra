@@ -10,3 +10,9 @@ module "database" {
 
   name_prefix = local.name_prefix
 }
+
+module "secrets" {
+  source = "../../modules/secrets"
+
+  parameter_prefix = "/${local.project}/${local.environment}"
+}
