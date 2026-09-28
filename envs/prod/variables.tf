@@ -11,3 +11,9 @@ variable "payment_public_key" {
   type        = string
   sensitive   = true
 }
+
+variable "origin_verify_secret" {
+  description = "Secret CloudFront sends to the API so it only answers requests from the CDN."
+  type        = string
+  sensitive   = true
+}

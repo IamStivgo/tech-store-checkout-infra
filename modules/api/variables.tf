@@ -89,3 +89,14 @@ variable "payment_public_key" {
   type        = string
   sensitive   = true
 }
+
+variable "origin_verify_secret" {
+  description = "Secret CloudFront sends to the API in x-origin-verify; the API refuses requests without it (T-086)."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.origin_verify_secret) >= 32
+    error_message = "origin_verify_secret must have at least 32 characters."
+  }
+}
