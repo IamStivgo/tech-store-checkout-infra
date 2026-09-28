@@ -1,14 +1,26 @@
 # Tech Store — Infraestructura (AWS + Terraform)
 
-| Repositorio | Contenido |
-|---|---|
-| [tech-store-checkout-web](https://github.com/IamStivgo/tech-store-checkout-web) | Frontend: SPA React |
-| [tech-store-checkout-api](https://github.com/IamStivgo/tech-store-checkout-api) | Backend: API NestJS, Swagger y modelo de datos |
+| Repositorio                                                                         | Contenido                                                         |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [tech-store-checkout-web](https://github.com/IamStivgo/tech-store-checkout-web)     | Frontend: SPA React                                               |
+| [tech-store-checkout-api](https://github.com/IamStivgo/tech-store-checkout-api)     | Backend: API NestJS, Swagger y modelo de datos                    |
 | [tech-store-checkout-infra](https://github.com/IamStivgo/tech-store-checkout-infra) | Infraestructura: Terraform y despliegue en AWS (este repositorio) |
 
 Infraestructura serverless en AWS, definida con Terraform, para la tienda de accesorios tecnológicos: CloudFront y S3 para la SPA, API Gateway y Lambda para el API, DynamoDB, SSM Parameter Store y EventBridge Scheduler. Este repositorio crea toda la infraestructura; los repositorios web y api solo despliegan su código.
 
 > Proyecto en construcción. Este README se completa a medida que avanza la implementación.
+
+## Estado de la entrega
+
+- **Desplegado:**
+  - 6 tablas DynamoDB;
+  - Lambdas del API y de conciliación con alias `live`;
+  - HTTP API, EventBridge Scheduler;
+  - SPA en S3 privado + CloudFront con security headers;
+  - roles OIDC para los pipelines.
+- **App:** https://d7vch0fsx8645.cloudfront.net.
+- **Secretos de la pasarela:** creados en SSM (SecureString) con la CLI, fuera de Terraform.
+- **Pendiente:** pasar a la Lambda del API la URL del sandbox y la llave pública (valores sensibles que no se versionan) para activar los pagos en producción.
 
 ## Estructura
 
@@ -28,11 +40,11 @@ placeholder/        # Handler mínimo con el que se crean las Lambdas
 
 ## Requisitos
 
-| Herramienta | Versión |
-|---|---|
-| Terraform | ≥ 1.11 |
-| TFLint | Con el ruleset de AWS (`tflint --init`) |
-| Node.js | 24 (`nvm use`), solo para los hooks de git |
+| Herramienta | Versión                                    |
+| ----------- | ------------------------------------------ |
+| Terraform   | ≥ 1.11                                     |
+| TFLint      | Con el ruleset de AWS (`tflint --init`)    |
+| Node.js     | 24 (`nvm use`), solo para los hooks de git |
 
 ## Uso local
 
@@ -50,11 +62,11 @@ terraform -chdir=envs/prod init -backend-config="bucket=checkout-app-tfstate-<ac
 terraform -chdir=envs/prod plan
 ```
 
-| Script | Descripción |
-|---|---|
-| `npm run lint` | `terraform fmt -check` y `tflint` en todo el repositorio |
-| `npm run format` | Aplica `terraform fmt` en todo el repositorio |
-| `npm test` | `terraform test` del bootstrap y de cada módulo con pruebas (proveedor simulado, sin credenciales de AWS) |
+| Script           | Descripción                                                                                               |
+| ---------------- | --------------------------------------------------------------------------------------------------------- |
+| `npm run lint`   | `terraform fmt -check` y `tflint` en todo el repositorio                                                  |
+| `npm run format` | Aplica `terraform fmt` en todo el repositorio                                                             |
+| `npm test`       | `terraform test` del bootstrap y de cada módulo con pruebas (proveedor simulado, sin credenciales de AWS) |
 
 ## Bootstrap (una sola vez)
 
@@ -108,9 +120,9 @@ unset value
 
 ## Despliegue (GitHub Actions con OIDC, sin llaves de AWS)
 
-| Workflow | Cuándo | Rol | Qué hace |
-|---|---|---|---|
-| `ci.yml`, job `Terraform plan` | Cada PR del propio repositorio (no forks ni Dependabot) | `checkout-app-terraform-plan` (solo lectura) | `terraform plan` de `envs/prod` contra el estado real y comentario en el PR con el resumen y el plan completo |
-| `apply.yml` | Merge a `main` (o manual) | `checkout-app-terraform-apply` | Tras la aprobación del environment `production`: `plan` + `apply` de `envs/prod`, verificación de los parámetros `/checkout-app/prod/deploy/*` y resumen con los outputs |
+| Workflow                       | Cuándo                                                  | Rol                                          | Qué hace                                                                                                                                                                 |
+| ------------------------------ | ------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ci.yml`, job `Terraform plan` | Cada PR del propio repositorio (no forks ni Dependabot) | `checkout-app-terraform-plan` (solo lectura) | `terraform plan` de `envs/prod` contra el estado real y comentario en el PR con el resumen y el plan completo                                                            |
+| `apply.yml`                    | Merge a `main` (o manual)                               | `checkout-app-terraform-apply`               | Tras la aprobación del environment `production`: `plan` + `apply` de `envs/prod`, verificación de los parámetros `/checkout-app/prod/deploy/*` y resumen con los outputs |
 
 El repositorio es público: el ID de la cuenta se enmascara en los logs y se reemplaza por `<account-id>` en los comentarios y resúmenes. Configuración del repositorio: variable `AWS_REGION` y **secrets** `TF_STATE_BUCKET`, `AWS_TERRAFORM_PLAN_ROLE_ARN` y `AWS_TERRAFORM_APPLY_ROLE_ARN` (salidas del bootstrap). Son secrets porque contienen el ID de la cuenta: GitHub imprime los parámetros de las acciones antes de que se active el enmascarado, y solo los secrets quedan ocultos desde el inicio.
