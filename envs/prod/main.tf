@@ -29,6 +29,8 @@ module "api" {
   table_arns              = module.database.table_arns
   payment_parameter_names = module.secrets.parameter_names
   payment_parameter_arns  = module.secrets.parameter_arns
+  payment_api_base_url    = var.payment_api_base_url
+  payment_public_key      = var.payment_public_key
 }
 
 module "static_site" {
@@ -36,6 +38,8 @@ module "static_site" {
 
   name_prefix = local.name_prefix
   api_domain  = module.api.http_api_domain
+  # The browser tokenizes the card directly with the payment provider.
+  csp_connect_origins = [regex("^https://[^/]+", var.payment_api_base_url)]
 }
 
 module "scheduler" {
