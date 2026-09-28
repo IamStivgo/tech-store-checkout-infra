@@ -23,8 +23,11 @@ locals {
 
   environment_variables = merge(
     {
-      APP_ENV   = var.app_env
-      LOG_LEVEL = var.log_level
+      APP_ENV              = var.app_env
+      LOG_LEVEL            = var.log_level
+      PAYMENT_PROVIDER     = "http"
+      PAYMENT_API_BASE_URL = var.payment_api_base_url
+      PAYMENT_PUBLIC_KEY   = var.payment_public_key
     },
     { for table, env_var in local.table_env_vars : env_var => var.table_names[table] },
     {

@@ -72,3 +72,20 @@ variable "payment_parameter_arns" {
   description = "SSM parameter ARNs of the payment provider secrets by logical name (output of the secrets module)."
   type        = map(string)
 }
+
+variable "payment_api_base_url" {
+  description = "Base URL of the payment provider API (e.g. its sandbox), without a trailing slash."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = can(regex("^https://[a-z0-9.-]+(/[a-z0-9/-]*[a-z0-9])?$", var.payment_api_base_url))
+    error_message = "payment_api_base_url must be an https URL without a trailing slash."
+  }
+}
+
+variable "payment_public_key" {
+  description = "Public key of the payment provider merchant; the private secrets stay in SSM."
+  type        = string
+  sensitive   = true
+}
