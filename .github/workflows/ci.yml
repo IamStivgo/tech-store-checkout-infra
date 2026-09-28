@@ -108,6 +108,7 @@ jobs:
         env:
           TF_VAR_payment_api_base_url: ${{ secrets.PAYMENT_API_BASE_URL }}
           TF_VAR_payment_public_key: ${{ secrets.PAYMENT_PUBLIC_KEY }}
+          TF_VAR_origin_verify_secret: ${{ secrets.ORIGIN_VERIFY_SECRET }}
         run: |
           terraform -chdir=envs/prod plan -no-color -out=tfplan
           terraform -chdir=envs/prod show -no-color tfplan > plan.txt

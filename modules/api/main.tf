@@ -28,6 +28,7 @@ locals {
       PAYMENT_PROVIDER     = "http"
       PAYMENT_API_BASE_URL = var.payment_api_base_url
       PAYMENT_PUBLIC_KEY   = var.payment_public_key
+      ORIGIN_VERIFY_SECRET = var.origin_verify_secret
     },
     { for table, env_var in local.table_env_vars : env_var => var.table_names[table] },
     {
