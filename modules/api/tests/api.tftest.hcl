@@ -38,6 +38,7 @@ variables {
   placeholder_source_dir = "../../placeholder"
   payment_api_base_url   = "https://sandbox.payments.example/v1"
   payment_public_key     = "pub_test_key"
+  origin_verify_secret   = "a-shared-secret-of-at-least-32-characters"
 
   table_names = {
     products           = "checkout-app-test-products"

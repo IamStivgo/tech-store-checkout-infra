@@ -31,6 +31,7 @@ module "api" {
   payment_parameter_arns  = module.secrets.parameter_arns
   payment_api_base_url    = var.payment_api_base_url
   payment_public_key      = var.payment_public_key
+  origin_verify_secret    = var.origin_verify_secret
 }
 
 module "static_site" {
@@ -38,6 +39,8 @@ module "static_site" {
 
   name_prefix = local.name_prefix
   api_domain  = module.api.http_api_domain
+
+  origin_verify_secret = var.origin_verify_secret
   # The browser tokenizes the card directly with the payment provider.
   csp_connect_origins = [regex("^https://[^/]+", var.payment_api_base_url)]
 }

@@ -28,6 +28,23 @@ mock_provider "aws" {
 variables {
   name_prefix = "checkout-app-test"
   api_domain  = "abc123.execute-api.us-east-1.amazonaws.com"
+
+  origin_verify_secret = "a-shared-secret-of-at-least-32-characters"
+}
+
+run "proves_the_origin_to_the_api" {
+  command = plan
+
+  assert {
+    condition = anytrue([
+      for origin in aws_cloudfront_distribution.this.origin :
+      origin.origin_id == "api" && anytrue([
+        for header in origin.custom_header :
+        header.name == "x-origin-verify" && header.value == "a-shared-secret-of-at-least-32-characters"
+      ])
+    ])
+    error_message = "CloudFront must send the origin secret to the API."
+  }
 }
 
 run "spa_bucket_is_private_and_only_readable_by_the_distribution" {

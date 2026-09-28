@@ -126,6 +126,12 @@ resource "aws_cloudfront_distribution" "this" {
     origin_id   = "api"
     domain_name = var.api_domain
 
+    # Proves to the API that the request came through CloudFront (and its security headers).
+    custom_header {
+      name  = "x-origin-verify"
+      value = var.origin_verify_secret
+    }
+
     custom_origin_config {
       http_port              = 80
       https_port             = 443
