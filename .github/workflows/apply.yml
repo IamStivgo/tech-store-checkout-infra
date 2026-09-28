@@ -49,6 +49,9 @@ jobs:
         run: terraform -chdir=envs/prod init -lockfile=readonly -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
 
       - name: Plan envs/prod
+        env:
+          TF_VAR_payment_api_base_url: ${{ secrets.PAYMENT_API_BASE_URL }}
+          TF_VAR_payment_public_key: ${{ secrets.PAYMENT_PUBLIC_KEY }}
         run: terraform -chdir=envs/prod plan -no-color -out=tfplan
 
       - name: Apply envs/prod

@@ -36,6 +36,8 @@ variables {
   name_prefix            = "checkout-app-test"
   app_env                = "prod"
   placeholder_source_dir = "../../placeholder"
+  payment_api_base_url   = "https://sandbox.payments.example/v1"
+  payment_public_key     = "pub_test_key"
 
   table_names = {
     products           = "checkout-app-test-products"
@@ -112,7 +114,9 @@ run "passes_resource_names_but_never_secret_values" {
       aws_lambda_function.this["api"].environment[0].variables["APP_ENV"] == "prod" &&
       aws_lambda_function.this["api"].environment[0].variables["TABLE_IDEMPOTENCY"] == "checkout-app-test-idempotency-keys" &&
       aws_lambda_function.this["api"].environment[0].variables["TABLE_TRANSACTION_EVENTS"] == "checkout-app-test-transaction-events" &&
-      aws_lambda_function.this["api"].environment[0].variables["PAYMENT_PRIVATE_KEY_PARAM"] == "/checkout-app/test/payment/private-key"
+      aws_lambda_function.this["api"].environment[0].variables["PAYMENT_PRIVATE_KEY_PARAM"] == "/checkout-app/test/payment/private-key" &&
+      aws_lambda_function.this["api"].environment[0].variables["PAYMENT_PROVIDER"] == "http" &&
+      aws_lambda_function.this["api"].environment[0].variables["PAYMENT_API_BASE_URL"] == "https://sandbox.payments.example/v1"
     )
     error_message = "The functions must receive APP_ENV, the table names and the secret parameter names."
   }
@@ -121,7 +125,8 @@ run "passes_resource_names_but_never_secret_values" {
     condition = alltrue(flatten([
       for function in aws_lambda_function.this : [
         for name in keys(function.environment[0].variables) :
-        !startswith(name, "PAYMENT_") || endswith(name, "_PARAM")
+        !startswith(name, "PAYMENT_") || endswith(name, "_PARAM") ||
+        contains(["PAYMENT_PROVIDER", "PAYMENT_API_BASE_URL", "PAYMENT_PUBLIC_KEY"], name)
       ]
     ]))
     error_message = "Payment provider secrets must be passed as SSM parameter names, never as values."
