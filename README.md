@@ -8,19 +8,55 @@
 
 Infraestructura serverless en AWS, definida con Terraform, para la tienda de accesorios tecnológicos: CloudFront y S3 para la SPA, API Gateway y Lambda para el API, DynamoDB, SSM Parameter Store y EventBridge Scheduler. Este repositorio crea toda la infraestructura; los repositorios web y api solo despliegan su código.
 
-> Proyecto en construcción. Este README se completa a medida que avanza la implementación.
+**App:** https://d7vch0fsx8645.cloudfront.net · **Swagger:** https://d7vch0fsx8645.cloudfront.net/api-docs/index.html
 
-## Estado de la entrega
+## Arquitectura en AWS
 
-- **Desplegado:**
-  - 6 tablas DynamoDB;
-  - Lambdas del API y de conciliación con alias `live`;
-  - HTTP API, EventBridge Scheduler;
-  - SPA en S3 privado + CloudFront con security headers;
-  - roles OIDC para los pipelines.
-- **App:** https://d7vch0fsx8645.cloudfront.net.
-- **Secretos de la pasarela:** creados en SSM (SecureString) con la CLI, fuera de Terraform.
-- **Pendiente:** pasar a la Lambda del API la URL del sandbox y la llave pública (valores sensibles que no se versionan) para activar los pagos en producción.
+Un solo dominio de CloudFront sirve la SPA, el API y la documentación, así que el navegador nunca hace peticiones entre orígenes a nuestro backend.
+
+```mermaid
+flowchart LR
+  User([Navegador]) --> CF[CloudFront<br/>headers de seguridad y CSP]
+  CF -- "/*" --> S3[(S3 privado<br/>SPA con OAC)]
+  CF -- "/api/*" --> APIGW[API Gateway HTTP API<br/>throttling por ruta]
+  CF -- "/api-docs/*" --> S3
+  APIGW --> API[Lambda api<br/>alias live]
+  Scheduler[EventBridge Scheduler<br/>cada 5 min] --> REC[Lambda reconcile<br/>alias live]
+  API --> DDB[(DynamoDB<br/>6 tablas)]
+  REC --> DDB
+  API --> SSM[SSM Parameter Store<br/>secretos SecureString]
+  REC --> SSM
+  API --> PSP[Pasarela de pagos<br/>sandbox]
+  REC --> PSP
+  User -. tarjeta cifrada .-> PSP
+```
+
+| Recurso | Módulo | Detalle |
+| --- | --- | --- |
+| CloudFront + S3 | `static-site` | S3 privado con Origin Access Control, función de enrutamiento de la SPA, CSP, HSTS, `X-Frame-Options`, `nosniff` y `Referrer-Policy` |
+| API Gateway HTTP API | `api` | Proxy `ANY /api/{proxy+}` y rutas sensibles con throttling propio (crear transacción, pagar, webhook) |
+| Lambdas `api` y `reconcile` | `api` | Node.js 24 en arm64, alias `live` para despliegues y rollback, logs con retención de 14 días |
+| DynamoDB | `database` | 6 tablas on-demand con PITR, protección contra borrado, índices de referencia y de pendientes, TTL de idempotencia |
+| SSM Parameter Store | `secrets` | Solo nombres y ARN de los secretos de la pasarela (los valores se crean con la CLI) |
+| EventBridge Scheduler | `scheduler` | Invoca la conciliación cada 5 minutos |
+| Roles OIDC | `ci-roles`, `bootstrap` | Un rol por pipeline con permisos mínimos y confianza solo desde el environment `production` de su repositorio |
+
+## Seguridad
+
+- **Sin llaves estáticas:** los pipelines asumen roles con OIDC de GitHub y solo desde el environment `production`, que exige aprobación.
+- **Mínimo privilegio:** cada Lambda solo accede a sus tablas, índices y parámetros; el rol de `plan` de los PR no puede leer los secretos.
+- **Secretos fuera del estado:** los valores de la pasarela viven en SSM (SecureString) y la URL y la llave pública llegan desde secrets del repositorio como variables `sensitive`, así que nunca se versionan ni aparecen en el plan publicado.
+- **Borde:** HTTPS obligatorio, headers de seguridad y CSP en CloudFront, bucket privado y throttling en API Gateway.
+
+## Costos
+
+| Servicio | Costo esperado |
+| --- | --- |
+| Lambda, API Gateway, DynamoDB on-demand, CloudFront, S3 | Dentro de la capa gratuita con el tráfico de la prueba |
+| SSM Parameter Store (parámetros estándar) | Sin costo |
+| **Total estimado** | **≈ USD 0–1 al mes** |
+
+La cuenta tiene presupuestos con alertas por correo para detectar cualquier gasto inesperado.
 
 ## Estructura
 
@@ -126,3 +162,14 @@ unset value
 | `apply.yml`                    | Merge a `main` (o manual)                               | `checkout-app-terraform-apply`               | Tras la aprobación del environment `production`: `plan` + `apply` de `envs/prod`, verificación de los parámetros `/checkout-app/prod/deploy/*` y resumen con los outputs |
 
 El repositorio es público: el ID de la cuenta se enmascara en los logs y se reemplaza por `<account-id>` en los comentarios y resúmenes. Configuración del repositorio: variable `AWS_REGION` y **secrets** `TF_STATE_BUCKET`, `AWS_TERRAFORM_PLAN_ROLE_ARN` y `AWS_TERRAFORM_APPLY_ROLE_ARN` (salidas del bootstrap). Son secrets porque contienen el ID de la cuenta: GitHub imprime los parámetros de las acciones antes de que se active el enmascarado, y solo los secrets quedan ocultos desde el inicio.
+
+## Decisiones y limitaciones
+
+- **Serverless y un solo dominio:** costo casi nulo, sin servidores que mantener y sin CORS entre la SPA y el API.
+- **Terraform crea, las aplicaciones despliegan:** las Lambdas se crean con un handler mínimo y los repos web y api despliegan su código con sus propios roles; los nombres de los recursos se publican en `/checkout-app/prod/deploy/*`.
+- **Sin dominio propio:** se usa el dominio de CloudFront; un dominio con certificado de ACM queda como mejora futura.
+- **Pendiente:** alarmas de CloudWatch con aviso por correo (requieren ampliar la política del operador) y un header secreto de origen entre CloudFront y API Gateway.
+
+## Autor
+
+Stiven · [@IamStivgo](https://github.com/IamStivgo)
