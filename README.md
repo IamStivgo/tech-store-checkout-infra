@@ -33,7 +33,7 @@ flowchart LR
 
 | Recurso | Módulo | Detalle |
 | --- | --- | --- |
-| CloudFront + S3 | `static-site` | S3 privado con Origin Access Control, función de enrutamiento de la SPA, CSP, HSTS, `X-Frame-Options`, `nosniff` y `Referrer-Policy` |
+| CloudFront + S3 | `static-site` | S3 privado con Origin Access Control, función de enrutamiento de la SPA, CSP, HSTS, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` y `Cross-Origin-Resource-Policy`; header secreto `x-origin-verify` hacia el API |
 | API Gateway HTTP API | `api` | Proxy `ANY /api/{proxy+}` y rutas sensibles con throttling propio (crear transacción, pagar, webhook) |
 | Lambdas `api` y `reconcile` | `api` | Node.js 24 en arm64, alias `live` para despliegues y rollback, logs con retención de 14 días |
 | DynamoDB | `database` | 6 tablas on-demand con PITR, protección contra borrado, índices de referencia y de pendientes, TTL de idempotencia |
@@ -46,7 +46,8 @@ flowchart LR
 - **Sin llaves estáticas:** los pipelines asumen roles con OIDC de GitHub y solo desde el environment `production`, que exige aprobación.
 - **Mínimo privilegio:** cada Lambda solo accede a sus tablas, índices y parámetros; el rol de `plan` de los PR no puede leer los secretos.
 - **Secretos fuera del estado:** los valores de la pasarela viven en SSM (SecureString) y la URL y la llave pública llegan desde secrets del repositorio como variables `sensitive`, así que nunca se versionan ni aparecen en el plan publicado.
-- **Borde:** HTTPS obligatorio, headers de seguridad y CSP en CloudFront, bucket privado y throttling en API Gateway.
+- **Borde:** HTTPS obligatorio, headers de seguridad y CSP en CloudFront, bucket privado y throttling en API Gateway. Calificación **A+** en [MDN HTTP Observatory](https://developer.mozilla.org/en-US/observatory).
+- **Solo a través de CloudFront:** CloudFront agrega a cada petición al API el header `x-origin-verify` con un secreto compartido que la Lambda también recibe; el API responde 403 a quien llame a API Gateway directamente y se salte los headers y protecciones del borde.
 
 ## Costos
 
@@ -163,12 +164,14 @@ unset value
 
 El repositorio es público: el ID de la cuenta se enmascara en los logs y se reemplaza por `<account-id>` en los comentarios y resúmenes. Configuración del repositorio: variable `AWS_REGION` y **secrets** `TF_STATE_BUCKET`, `AWS_TERRAFORM_PLAN_ROLE_ARN` y `AWS_TERRAFORM_APPLY_ROLE_ARN` (salidas del bootstrap). Son secrets porque contienen el ID de la cuenta: GitHub imprime los parámetros de las acciones antes de que se active el enmascarado, y solo los secrets quedan ocultos desde el inicio.
 
+`apply.yml` además pasa como variables `sensitive` (`TF_VAR_*`) los secrets `PAYMENT_API_BASE_URL` y `PAYMENT_PUBLIC_KEY` (URL y llave pública del sandbox, para la Lambda y la CSP) y `ORIGIN_VERIFY_SECRET` (el secreto entre CloudFront y el API, de al menos 32 caracteres).
+
 ## Decisiones y limitaciones
 
 - **Serverless y un solo dominio:** costo casi nulo, sin servidores que mantener y sin CORS entre la SPA y el API.
 - **Terraform crea, las aplicaciones despliegan:** las Lambdas se crean con un handler mínimo y los repos web y api despliegan su código con sus propios roles; los nombres de los recursos se publican en `/checkout-app/prod/deploy/*`.
 - **Sin dominio propio:** se usa el dominio de CloudFront; un dominio con certificado de ACM queda como mejora futura.
-- **Pendiente:** alarmas de CloudWatch con aviso por correo (requieren ampliar la política del operador) y un header secreto de origen entre CloudFront y API Gateway.
+- **Pendiente:** alarmas de CloudWatch con aviso por correo (requieren ampliar la política del operador).
 
 ## Autor
 
